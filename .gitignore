@@ -58,6 +58,4 @@ dist/
 data/uploads/*
 !data/uploads/.gitkeep
 
-.env.example
-
 .venv
