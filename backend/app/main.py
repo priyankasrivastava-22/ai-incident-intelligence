@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.app.core.exceptions import unhandled_exception_handler
+from backend.app.api.v1.router import router as v1_router
 
 
 @asynccontextmanager
@@ -29,7 +30,7 @@ app.add_middleware(
 
 
 app.add_exception_handler(Exception, unhandled_exception_handler)
-
+app.include_router(v1_router)
 
 @app.get("/health")
 async def health_check():
