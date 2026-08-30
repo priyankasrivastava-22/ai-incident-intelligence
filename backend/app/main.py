@@ -1,27 +1,34 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.app.core.exceptions import unhandled_exception_handler
-from contextlib import asynccontextmanager
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    print("AI Incident Intelligence API starting...")
     yield
+    print("AI Incident Intelligence API shutting down...")
+
 
 app = FastAPI(
-    lifespan=lifespan,
     title="AI Incident Intelligence",
-    version="0.1.0",
-    description="AI-powered incident intelligence and root cause analysis platform",
+    description="AI-powered incident detection, analysis, and intelligence platform.",
+    version="1.0.0",
+    lifespan=lifespan,
 )
-app.add_exception_handler(Exception, unhandled_exception_handler)
+
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+app.add_exception_handler(Exception, unhandled_exception_handler)
 
 
 @app.get("/health")
@@ -31,9 +38,7 @@ async def health_check():
 
 @app.get("/api/health")
 async def api_health_check():
-    return {"status": "healthy"}
-
-
-@app.get("/api/v1/health")
-async def api_v1_health_check():
-    return {"status": "healthy", "api_version": "v1"}
+    return {
+        "status": "healthy",
+        "api_version": "v1",
+    }
