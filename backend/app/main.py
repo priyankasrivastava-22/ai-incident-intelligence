@@ -1,8 +1,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.app.core.exceptions import unhandled_exception_handler
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    yield
 
 app = FastAPI(
+    lifespan=lifespan,
     title="AI Incident Intelligence",
     version="0.1.0",
     description="AI-powered incident intelligence and root cause analysis platform",
