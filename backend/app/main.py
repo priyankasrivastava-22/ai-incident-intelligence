@@ -1,11 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from backend.app.core.exceptions import unhandled_exception_handler
 
 app = FastAPI(
     title="AI Incident Intelligence",
     version="0.1.0",
     description="AI-powered incident intelligence and root cause analysis platform",
 )
+app.add_exception_handler(Exception, unhandled_exception_handler)
 
 app.add_middleware(
     CORSMiddleware,
