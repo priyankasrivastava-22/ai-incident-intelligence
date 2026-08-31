@@ -3,3 +3,6 @@ uvicorn[standard]
 pydantic
 pydantic-settings
 python-dotenv
+psycopg2-binary
+SQLAlchemy
+alembic==1.19.1
