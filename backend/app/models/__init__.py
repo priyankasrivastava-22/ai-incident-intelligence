@@ -7,6 +7,7 @@ from backend.app.models.incident_service import IncidentService
 from backend.app.models.log_event import LogEvent
 from backend.app.models.log_file import LogFile
 from backend.app.models.metric import Metric
+from backend.app.models.revoked_token import RevokedToken
 from backend.app.models.user import User
 
 
@@ -20,5 +21,6 @@ __all__ = [
     "LogEvent",
     "LogFile",
     "Metric",
+    "RevokedToken",
     "User",
 ]
