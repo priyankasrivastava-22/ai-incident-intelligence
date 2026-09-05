@@ -1,10 +1,12 @@
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class UploadLogResponse(BaseModel):
     """Response returned after a log file is accepted for ingestion."""
+
+    model_config = ConfigDict(from_attributes=True)
 
     id: UUID
     filename: str
@@ -26,6 +28,8 @@ class ManualLogRequest(BaseModel):
 
 class ManualLogResponse(BaseModel):
     """Response returned after manual log ingestion."""
+
+    model_config = ConfigDict(from_attributes=True)
 
     id: UUID
     service: str
