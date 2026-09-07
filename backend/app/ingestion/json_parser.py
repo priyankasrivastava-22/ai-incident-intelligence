@@ -121,6 +121,7 @@ class JsonLogParser:
                 timestamp=timestamp,
                 level=level,
                 message=message,
+                service=service,
                 host=host,
                 endpoint=endpoint,
                 method=method,

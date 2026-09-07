@@ -54,6 +54,7 @@ def test_parser_routing() -> None:
     assert standard_result.parsed_log.message == "Booking service started"
 
     assert json_result.parsed_log.level == "ERROR"
+    assert json_result.parsed_log.service == "booking-api"
     assert json_result.parsed_log.trace_id == "abc123"
 
     assert access_result.parsed_log.client_ip == "192.168.1.10"
