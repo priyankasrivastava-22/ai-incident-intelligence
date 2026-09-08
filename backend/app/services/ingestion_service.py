@@ -5,9 +5,10 @@ from uuid import UUID
 from fastapi import UploadFile
 from sqlalchemy.orm import Session
 
+from backend.app.ingestion.parser import LogParser
+from backend.app.ingestion.parser_models import ParseStatus, ParsingStatistics
 from backend.app.models.log_event import LogEvent
 from backend.app.models.log_file import LogFile
-from backend.app.ingestion.parser import LogParser
 from backend.app.repositories.log_event_repository import LogEventRepository
 from backend.app.repositories.log_file_repository import LogFileRepository
 
@@ -102,17 +103,23 @@ class LogIngestionService:
         service: str,
         environment: str,
         events: list[LogEvent],
+        statistics: ParsingStatistics,
     ) -> int:
-        """Parse one line and append a valid event to the batch."""
+        """Parse one line, update statistics, and append valid events."""
 
-        parsed_log = self.parser.parse(line)
+        result = self.parser.parse_with_result(line)
 
-        if parsed_log is None:
+        statistics.record(result)
+
+        if result.status != ParseStatus.PARSED:
+            return 0
+
+        if result.parsed_log is None:
             return 0
 
         events.append(
             self._build_event(
-                parsed_log=parsed_log,
+                parsed_log=result.parsed_log,
                 log_file_id=log_file_id,
                 service=service,
                 environment=environment,
@@ -158,6 +165,8 @@ class LogIngestionService:
             uploaded_by=uploaded_by,
         )
 
+        statistics = ParsingStatistics()
+
         log_file.processing_status = "processing"
         self.db.flush()
 
@@ -200,6 +209,7 @@ class LogIngestionService:
                         service=service,
                         environment=environment,
                         events=events,
+                        statistics=statistics,
                     )
 
             # Process the final line when the file does not end
@@ -216,6 +226,7 @@ class LogIngestionService:
                     service=service,
                     environment=environment,
                     events=events,
+                    statistics=statistics,
                 )
 
             # Persist the final partial batch.
@@ -275,6 +286,8 @@ class LogIngestionService:
             uploaded_by=uploaded_by,
         )
 
+        statistics = ParsingStatistics()
+
         log_file.processing_status = "processing"
         self.db.flush()
 
@@ -289,6 +302,7 @@ class LogIngestionService:
                     service=service,
                     environment=environment,
                     events=events,
+                    statistics=statistics,
                 )
 
             if events:
