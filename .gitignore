@@ -59,3 +59,6 @@ data/uploads/*
 !data/uploads/.gitkeep
 
 .venv
+
+# Alembic cache
+backend/alembic/__pycache__/
