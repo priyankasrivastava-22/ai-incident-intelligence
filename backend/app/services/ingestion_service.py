@@ -11,6 +11,9 @@ from backend.app.models.log_event import LogEvent
 from backend.app.models.log_file import LogFile
 from backend.app.repositories.log_event_repository import LogEventRepository
 from backend.app.repositories.log_file_repository import LogFileRepository
+from backend.app.services.evidence_normalization_service import (
+    EvidenceNormalizationService,
+)
 
 
 class IngestionValidationError(Exception):
@@ -18,7 +21,7 @@ class IngestionValidationError(Exception):
 
 
 class LogIngestionService:
-    """Handle log-file ingestion, parsing, and persistence."""
+    """Handle log-file ingestion, parsing, normalization, and persistence."""
 
     ALLOWED_EXTENSIONS = {".log", ".txt"}
 
@@ -42,6 +45,7 @@ class LogIngestionService:
         self.log_event_repository = LogEventRepository(db)
 
         self.parser = LogParser()
+        self.normalization_service = EvidenceNormalizationService()
 
     def validate_file(
         self,
@@ -93,7 +97,36 @@ class LogIngestionService:
             response_time=parsed_log.response_time,
             exception=parsed_log.exception,
             trace_id=parsed_log.trace_id,
+            client_ip=parsed_log.client_ip,
+            http_version=parsed_log.http_version,
+            response_size=parsed_log.response_size,
         )
+
+    def _persist_event_batch(
+        self,
+        events: list[LogEvent],
+    ) -> None:
+        """Persist log events and create normalized evidence."""
+
+        if not events:
+            return
+
+        self.log_event_repository.create_many(events)
+        self.db.flush()
+
+        normalized_events = [
+            self.normalization_service.normalize_log_event(
+                event,
+                source="application_log",
+                layer="application",
+            )
+            for event in events
+        ]
+
+        self.db.add_all(normalized_events)
+        self.db.flush()
+
+        events.clear()
 
     def _process_line(
         self,
@@ -127,9 +160,7 @@ class LogIngestionService:
         )
 
         if len(events) >= self.EVENT_BATCH_SIZE:
-            self.log_event_repository.create_many(events)
-            self.db.flush()
-            events.clear()
+            self._persist_event_batch(events)
 
         return 1
 
@@ -230,14 +261,19 @@ class LogIngestionService:
                 )
 
             # Persist the final partial batch.
-            if events:
-                self.log_event_repository.create_many(events)
-                self.db.flush()
-                events.clear()
+            self._persist_event_batch(events)
 
             log_file.file_size = total_size
             log_file.processing_status = "completed"
             log_file.total_entries = total_entries
+
+            log_file.total_lines = statistics.total_lines
+            log_file.parsed_lines = statistics.parsed_lines
+            log_file.skipped_lines = statistics.skipped_lines
+            log_file.malformed_lines = statistics.malformed_lines
+            log_file.unknown_format_lines = statistics.unknown_format_lines
+            log_file.parser_errors = statistics.parser_errors
+
             log_file.processed_at = datetime.now(timezone.utc)
 
             self.db.commit()
@@ -305,13 +341,19 @@ class LogIngestionService:
                     statistics=statistics,
                 )
 
-            if events:
-                self.log_event_repository.create_many(events)
-                self.db.flush()
-                events.clear()
+            # Persist the final partial batch.
+            self._persist_event_batch(events)
 
             log_file.processing_status = "completed"
             log_file.total_entries = total_entries
+
+            log_file.total_lines = statistics.total_lines
+            log_file.parsed_lines = statistics.parsed_lines
+            log_file.skipped_lines = statistics.skipped_lines
+            log_file.malformed_lines = statistics.malformed_lines
+            log_file.unknown_format_lines = statistics.unknown_format_lines
+            log_file.parser_errors = statistics.parser_errors
+
             log_file.processed_at = datetime.now(timezone.utc)
 
             self.db.commit()

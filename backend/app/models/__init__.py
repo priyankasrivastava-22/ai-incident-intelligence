@@ -9,6 +9,7 @@ from backend.app.models.log_file import LogFile
 from backend.app.models.metric import Metric
 from backend.app.models.revoked_token import RevokedToken
 from backend.app.models.user import User
+from backend.app.models.normalized_evidence import NormalizedEvidence
 
 
 __all__ = [

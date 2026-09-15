@@ -127,22 +127,25 @@ class LogParser:
         stripped_line = line.strip()
 
         if not stripped_line:
-            return ParseResult(
-                status=ParseStatus.UNKNOWN_FORMAT,
-                error_message="Empty log line.",
-            )
+            return ParseResult(status=ParseStatus.UNKNOWN_FORMAT, error_message="Empty log line.")
 
-        # JSON logs
         if stripped_line.startswith("{"):
-            return self.json_parser.parse(stripped_line)
+            result = self.json_parser.parse(stripped_line)
+            if result.status == ParseStatus.UNKNOWN_FORMAT:
+                result.status = ParseStatus.MALFORMED
+            return result
 
-        # Apache/Nginx-style access logs
         if self._looks_like_access_log(stripped_line):
-            return self.access_parser.parse(stripped_line)
+            result = self.access_parser.parse(stripped_line)
+            if result.status == ParseStatus.UNKNOWN_FORMAT:
+                result.status = ParseStatus.MALFORMED
+            return result
 
-        # Standard application logs
         if self._looks_like_standard_log(stripped_line):
-            return self.standard_parser.parse(stripped_line)
+            result = self.standard_parser.parse(stripped_line)
+            if result.status == ParseStatus.UNKNOWN_FORMAT:
+                result.status = ParseStatus.MALFORMED
+            return result
 
         return ParseResult(
             status=ParseStatus.UNKNOWN_FORMAT,
