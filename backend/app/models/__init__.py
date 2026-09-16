@@ -10,6 +10,7 @@ from backend.app.models.metric import Metric
 from backend.app.models.revoked_token import RevokedToken
 from backend.app.models.user import User
 from backend.app.models.normalized_evidence import NormalizedEvidence
+from backend.app.models.incident_signal import IncidentSignal
 
 
 __all__ = [
@@ -24,4 +25,5 @@ __all__ = [
     "Metric",
     "RevokedToken",
     "User",
+    "IncidentSignal",
 ]
